@@ -6,3 +6,6 @@ def test_benchmark():
         subset=True,
         subsample=10,
     )
+
+if __name__ == '__main__':
+    test_benchmark()

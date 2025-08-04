@@ -40,7 +40,7 @@ def eval_homography_estimator(instance, estimator="poselib"):
 
     if estimator == "poselib":
         tt1 = datetime.datetime.now()
-        H, info = poselib.estimate_homography(instance["x1"], instance["x2"], opt, {})
+        H, info = poselib.estimate_homography(instance["x1"], instance["x2"], opt)
         tt2 = datetime.datetime.now()
     elif estimator == "pycolmap":
         opt = poselib_opt_to_pycolmap_opt(opt)
@@ -108,11 +108,12 @@ def main(
 
         # RANSAC options
         opt = {
-            "max_reproj_error": threshold,
-            "max_epipolar_error": threshold,
-            "max_iterations": 1000,
-            "min_iterations": 100,
-            "success_prob": 0.9999,
+            "max_error": threshold,
+            "ransac":{
+                "max_iterations": 1000,
+                "min_iterations": 100,
+                "success_prob": 0.9999,
+            }
         }
 
         # Add in global overrides

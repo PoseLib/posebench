@@ -41,11 +41,11 @@ def eval_pnp_estimator(instance, estimator="poselib_pnp"):
 
     if estimator == "poselib_pnp":
         tt1 = datetime.datetime.now()
-        pose, info = poselib.estimate_absolute_pose(
-            instance["p2d"], instance["p3d"], instance["cam"], opt, {}
+        image, info = poselib.estimate_absolute_pose(
+            instance["p2d"], instance["p3d"], instance["cam"], opt
         )
         tt2 = datetime.datetime.now()
-        (R, t) = (pose.R, pose.t)
+        (R, t) = (image.pose.R, image.pose.t)
     elif estimator == "poselib_pnpl":
         tt1 = datetime.datetime.now()
         pose, info = poselib.estimate_absolute_pose_pnpl(
@@ -57,7 +57,6 @@ def eval_pnp_estimator(instance, estimator="poselib_pnp"):
             instance["l3d"][:, 3:6],
             instance["cam"],
             opt,
-            {},
         )
         tt2 = datetime.datetime.now()
         (R, t) = (pose.R, pose.t)
@@ -122,11 +121,12 @@ def main(
 
         # RANSAC options
         opt = {
-            "max_reproj_error": threshold,
-            "max_epipolar_error": threshold,
-            "max_iterations": 1000,
-            "min_iterations": 100,
-            "success_prob": 0.9999,
+            "max_error": threshold,
+            "ransac": {
+                "max_iterations": 1000,
+                "min_iterations": 100,
+                "success_prob": 0.9999,
+            }
         }
 
         # Add in global overrides

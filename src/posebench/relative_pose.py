@@ -48,7 +48,7 @@ def eval_essential_estimator(instance, estimator="poselib"):
     if estimator == "poselib":
         tt1 = datetime.datetime.now()
         pose, info = poselib.estimate_relative_pose(
-            instance["x1"], instance["x2"], instance["cam1"], instance["cam2"], opt, {}
+            instance["x1"], instance["x2"], instance["cam1"], instance["cam2"], opt
         )
         tt2 = datetime.datetime.now()
         (R, t) = (pose.R, pose.t)
@@ -113,7 +113,7 @@ def eval_fundamental_estimator(instance, estimator="poselib"):
     opt = instance["opt"]
     if estimator == "poselib":
         tt1 = datetime.datetime.now()
-        F, info = poselib.estimate_fundamental(instance["x1"], instance["x2"], opt, {})
+        F, info = poselib.estimate_fundamental(instance["x1"], instance["x2"], opt)
         tt2 = datetime.datetime.now()
         inl = info["inliers"]
     elif estimator == "pycolmap":
@@ -202,11 +202,12 @@ def main(
         f = h5py.File(f"{dataset_path}/{dataset}.h5", "r")
 
         opt = {
-            "max_reproj_error": threshold,
-            "max_epipolar_error": threshold,
-            "max_iterations": 1000,
-            "min_iterations": 100,
-            "success_prob": 0.9999,
+            "max_error": threshold,
+            "ransac": {
+                "max_iterations": 1000,
+                "min_iterations": 100,
+                "success_prob": 0.9999,
+            }
         }
 
         for k, v in force_opt.items():

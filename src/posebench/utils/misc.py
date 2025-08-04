@@ -18,18 +18,16 @@ def substr_in_list(s, lst):
 def poselib_opt_to_pycolmap_opt(opt):
     pyc_opt = pycolmap.RANSACOptions()
 
-    if "max_reproj_error" in opt:
-        pyc_opt.max_error = opt["max_reproj_error"]
-    elif "max_epipolar_error" in opt:
-        pyc_opt.max_error = opt["max_epipolar_error"]
+    if "max_error" in opt:
+        pyc_opt.max_error = opt["max_error"]
 
-    if "max_iterations" in opt:
-        pyc_opt.max_num_trials = opt["max_iterations"]
-    if "min_iterations" in opt:
-        pyc_opt.min_num_trials = opt["min_iterations"]
-
-    if "success_prob" in opt:
-        pyc_opt.confidence = opt["success_prob"]
+    if "ransac" in opt:
+        if "max_iterations" in opt["ransac"]:
+            pyc_opt.max_num_trials = opt["ransac"]["max_iterations"]
+        if "min_iterations" in opt["ransac"]:
+            pyc_opt.min_num_trials = opt["ransac"]["min_iterations"]
+        if "success_prob" in opt["ransac"]:
+            pyc_opt.confidence = opt["ransac"]["success_prob"]
 
     return pyc_opt
 
