@@ -17,6 +17,7 @@ from posebench.utils.misc import (
     poselib_opt_to_pycolmap_opt,
     substr_in_list,
 )
+from posebench.estimators import homography_poselib, homography_pycolmap
 
 
 # Compute metrics for homography estimation
@@ -25,54 +26,15 @@ def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
     methods = results.keys()
     metrics = {}
     for m in methods:
-        max_err = [np.max((a, b)) for (a, b) in results[m]["errs"]]
+        max_err = [np.max((a, b)) for (a, b) in zip(results[m]["rot"], results[m]["t"])]
         metrics[m] = {}
         aucs = compute_auc(max_err, thresholds)
         for auc, t in zip(aucs, thresholds):
             metrics[m][f"AUC{int(t)}"] = auc
-        metrics[m]["avg_rt"] = np.mean(results[m]["runtime"])
-        metrics[m]["med_rt"] = np.median(results[m]["runtime"])
+        metrics[m]["avg_rt"] = np.mean(results[m]["rt"])
+        metrics[m]["med_rt"] = np.median(results[m]["rt"])
 
     return metrics
-
-
-def eval_homography_estimator(instance, estimator="poselib"):
-    opt = instance["opt"]
-
-    if estimator == "poselib":
-        tt1 = datetime.datetime.now()
-        H, info = poselib.estimate_homography(instance["x1"], instance["x2"], opt)
-        tt2 = datetime.datetime.now()
-    elif estimator == "pycolmap":
-        opt = poselib_opt_to_pycolmap_opt(opt)
-        tt1 = datetime.datetime.now()
-        result = pycolmap.estimate_homography_matrix(
-            instance["x1"], instance["x2"], opt
-        )
-        tt2 = datetime.datetime.now()
-        H = result["H"]
-
-    K1 = camera_dict_to_calib_matrix(instance["cam1"])
-    K2 = camera_dict_to_calib_matrix(instance["cam2"])
-    Hnorm = np.linalg.inv(K2) @ H @ K1
-
-    _, rotations, translations, _ = cv2.decomposeHomographyMat(Hnorm, np.identity(3))
-
-    best_err_R = 180.0
-    best_err_t = 180.0
-
-    for k in range(len(rotations)):
-        R = rotations[k]
-        t = translations[k][:, 0]
-
-        err_R = rotation_angle(instance["R"] @ R.T)
-        err_t = angle(instance["t"], t)
-
-        if err_R + err_t < best_err_R + best_err_t:
-            best_err_R = err_R
-            best_err_t = err_t
-
-    return [best_err_R, best_err_t], (tt2 - tt1).total_seconds()
 
 
 def main(
@@ -90,8 +52,8 @@ def main(
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
     evaluators = {
-        "H (poselib)": lambda i: eval_homography_estimator(i, estimator="poselib"),
-        "H (COLMAP)": lambda i: eval_homography_estimator(i, estimator="pycolmap"),
+        "H (poselib)": lambda i: homography_poselib(i),
+        "H (COLMAP)": lambda i: homography_pycolmap(i),
     }
     if len(method_filter) > 0:
         evaluators = {
@@ -105,7 +67,7 @@ def main(
 
         results = {}
         for k in evaluators.keys():
-            results[k] = {"errs": [], "runtime": []}
+            results[k] = {}
 
         # RANSAC options
         opt = {
@@ -143,9 +105,11 @@ def main(
             }
 
             for name, fcn in evaluators.items():
-                errs, runtime = fcn(instance)
-                results[name]["errs"].append(np.array(errs))
-                results[name]["runtime"].append(runtime)
+                errs = fcn(instance)
+                for key in errs.keys():
+                    if key not in results[name]:
+                        results[name][key] = []
+                    results[name][key].append(errs[key])
         metrics[dataset] = compute_metrics(results)
         full_results[dataset] = results
     return metrics, full_results

@@ -15,6 +15,7 @@ from posebench.utils.misc import (
     poselib_opt_to_pycolmap_opt,
     substr_in_list,
 )
+from posebench.estimators import absolute_pose_poselib, absolute_pose_pycolmap
 
 
 # Compute metrics for absolute pose estimation
@@ -23,60 +24,18 @@ def compute_metrics(results, thresholds=[0.1, 1.0, 5.0]):
     methods = results.keys()
     metrics = {}
     for m in methods:
-        rot_err = [a for (a, b) in results[m]["errs"]]
-        cc_err = [b for (a, b) in results[m]["errs"]]
+        rot_err = results[m]["rot"]
+        cc_err = results[m]["pos"]
         metrics[m] = {}
         aucs = compute_auc(cc_err, thresholds)
         for auc, t in zip(aucs, thresholds):
             metrics[m][f"AUC{int(t)}"] = auc
         metrics[m]["med_rot"] = np.median(rot_err)
         metrics[m]["med_pos"] = np.median(cc_err)
-        metrics[m]["avg_rt"] = np.mean(results[m]["runtime"])
-        metrics[m]["med_rt"] = np.median(results[m]["runtime"])
+        metrics[m]["avg_rt"] = np.mean(results[m]["rt"])
+        metrics[m]["med_rt"] = np.median(results[m]["rt"])
 
     return metrics
-
-
-def eval_pnp_estimator(instance, estimator="poselib_pnp"):
-    opt = instance["opt"]
-
-    if estimator == "poselib_pnp":
-        tt1 = datetime.datetime.now()
-        image, info = poselib.estimate_absolute_pose(
-            instance["p2d"], instance["p3d"], instance["cam"], opt
-        )
-        tt2 = datetime.datetime.now()
-        (R, t) = (image.pose.R, image.pose.t)
-    elif estimator == "poselib_pnpl":
-        tt1 = datetime.datetime.now()
-        pose, info = poselib.estimate_absolute_pose_pnpl(
-            instance["p2d"],
-            instance["p3d"],
-            instance["l2d"][:, 0:2],
-            instance["l2d"][:, 2:4],
-            instance["l3d"][:, 0:3],
-            instance["l3d"][:, 3:6],
-            instance["cam"],
-            opt,
-        )
-        tt2 = datetime.datetime.now()
-        (R, t) = (pose.R, pose.t)
-    elif estimator == "pycolmap":
-        opt = poselib_opt_to_pycolmap_opt(opt)
-        tt1 = datetime.datetime.now()
-        result = pycolmap.estimate_and_refine_absolute_pose(
-            instance["p2d"],
-            instance["p3d"],
-            instance["cam"],
-            {"estimate_focal_length": False, "ransac": opt},
-        )
-        tt2 = datetime.datetime.now()
-        R = qvec2rotmat(eigen_quat_to_wxyz(result["cam_from_world"].rotation.quat))
-        t = result["cam_from_world"].translation
-
-    err_R = rotation_angle(instance["R"] @ R.T)
-    err_c = np.linalg.norm(instance["R"].T @ instance["t"] - R.T @ t)
-    return [err_R, err_c], (tt2 - tt1).total_seconds()
 
 
 def main(
@@ -101,9 +60,14 @@ def main(
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
     evaluators = {
-        "PnP (poselib)": lambda i: eval_pnp_estimator(i, estimator="poselib_pnp"),
-        "PnP (COLMAP)": lambda i: eval_pnp_estimator(i, estimator="pycolmap"),
-        #'PnPL (poselib)': lambda i: eval_pnp_estimator(i, estimator='poselib_pnpl')
+        "PnP (poselib)": lambda i: absolute_pose_poselib(i),
+        "PnP (COLMAP)": lambda i: absolute_pose_pycolmap(i),
+
+        "PnPf (poselib)": lambda i: absolute_pose_poselib(i, estimate_focal_length=True),
+        "PnPf (COLMAP)": lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True),
+
+        "PnPfr (poselib)": lambda i: absolute_pose_poselib(i, estimate_focal_length=True, estimate_extra_params=True),
+        "PnPfr (COLMAP)": lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True, estimate_extra_params=True),
     }
 
     if len(method_filter) > 0:
@@ -118,7 +82,7 @@ def main(
 
         results = {}
         for k in evaluators.keys():
-            results[k] = {"errs": [], "runtime": []}
+            results[k] = {}
 
         # RANSAC options
         opt = {
@@ -162,9 +126,11 @@ def main(
 
             # Run each of the evaluators
             for name, fcn in evaluators.items():
-                errs, runtime = fcn(instance)
-                results[name]["errs"].append(np.array(errs))
-                results[name]["runtime"].append(runtime)
+                errs = fcn(instance)
+                for k,v in errs.items():
+                    if k not in results[name]:
+                        results[name][k] = []
+                    results[name][k].append(v)
 
         metrics[dataset] = compute_metrics(results)
         full_results[dataset] = results

@@ -2,6 +2,7 @@ import numpy as np
 import pycolmap
 import requests
 from tqdm import tqdm
+import poselib
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -51,11 +52,8 @@ def calib_matrix_to_camera_dict(K):
 
 
 def camera_dict_to_calib_matrix(cam):
-    if cam["model"] == "PINHOLE":
-        p = cam["params"]
-        return np.array([[p[0], 0.0, p[2]], [0.0, p[1], p[3]], [0.0, 0.0, 1.0]])
-    else:
-        raise Exception("nyi model in camera_dict_to_calib_matrix")
+    cam = poselib.Camera(cam)
+    return cam.calib_matrix()
 
 
 # From Paul
