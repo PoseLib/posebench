@@ -10,6 +10,7 @@ from tqdm import tqdm
 import posebench
 from posebench.utils.geometry import angle, rotation_angle
 from posebench.utils.misc import (
+    print_metrics_per_dataset,
     camera_dict_to_calib_matrix,
     compute_auc,
     h5_to_camera_dict,
@@ -151,8 +152,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter = posebench.parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
+    posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter
+        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
-    posebench.print_metrics_per_dataset(metrics)
+    print_metrics_per_dataset(metrics)

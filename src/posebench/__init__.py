@@ -44,6 +44,24 @@ def _parse_args():
     return force_opt, method_filter, dataset_filter, args.subsample, args.subset
 
 
+def download_data(subset: bool = False):
+    # Download and extract data if needed
+    if not Path("data").is_dir():
+        if subset:
+            data_zipfile_name = "data-subsampled-10.zip"
+        else:
+            data_zipfile_name = "data.zip"
+        if not Path(data_zipfile_name).is_file():
+            print(f"Downloading {data_zipfile_name}...")
+            download_file_with_progress(
+                f"https://github.com/Parskatt/storage/releases/download/posebench-v0.0.1/{data_zipfile_name}",
+                data_zipfile_name,
+            )
+        print("Extracting data...")
+        with zipfile.ZipFile(data_zipfile_name, "r") as zip_ref:
+            zip_ref.extractall(".")
+        os.remove(data_zipfile_name)
+
 def run_benchmark(
     min_iterations: Optional[int] = None,
     max_iterations: Optional[int] = None,
@@ -68,22 +86,7 @@ def run_benchmark(
     if dataset_filter is None:
         dataset_filter = []
 
-    # Download and extract data if needed
-    if not Path("data").is_dir():
-        if subset:
-            data_zipfile_name = "data-subsampled-10.zip"
-        else:
-            data_zipfile_name = "data.zip"
-        if not Path(data_zipfile_name).is_file():
-            print(f"Downloading {data_zipfile_name}...")
-            download_file_with_progress(
-                f"https://github.com/Parskatt/storage/releases/download/posebench-v0.0.1/{data_zipfile_name}",
-                data_zipfile_name,
-            )
-        print("Extracting data...")
-        with zipfile.ZipFile(data_zipfile_name, "r") as zip_ref:
-            zip_ref.extractall(".")
-        os.remove(data_zipfile_name)
+    download_data(subset)
 
     # Define problems
     problems = {

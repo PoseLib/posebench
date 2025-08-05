@@ -9,6 +9,7 @@ from tqdm import tqdm
 import posebench
 from posebench.utils.geometry import eigen_quat_to_wxyz, qvec2rotmat, rotation_angle
 from posebench.utils.misc import (
+    print_metrics_per_dataset,
     compute_auc,
     h5_to_camera_dict,
     poselib_opt_to_pycolmap_opt,
@@ -172,8 +173,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter = posebench.parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
+    posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter
+        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
-    posebench.print_metrics_per_dataset(metrics)
+    print_metrics_per_dataset(metrics)

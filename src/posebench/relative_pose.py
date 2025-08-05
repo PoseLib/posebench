@@ -18,6 +18,7 @@ from posebench.utils.geometry import (
     sampson_error,
 )
 from posebench.utils.misc import (
+    print_metrics_per_dataset,
     camera_dict_to_calib_matrix,
     compute_auc,
     h5_to_camera_dict,
@@ -46,6 +47,15 @@ def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
 def eval_essential_estimator(instance, estimator="poselib"):
     opt = instance["opt"]
     if estimator == "poselib":
+        tt1 = datetime.datetime.now()
+        pose, info = poselib.estimate_relative_pose(
+            instance["x1"], instance["x2"], instance["cam1"], instance["cam2"], opt
+        )
+        tt2 = datetime.datetime.now()
+        (R, t) = (pose.R, pose.t)
+    elif estimator == "poselib-TS":
+        opt = opt.copy()
+        opt['tangent_sampson'] = True
         tt1 = datetime.datetime.now()
         pose, info = poselib.estimate_relative_pose(
             instance["x1"], instance["x2"], instance["cam1"], instance["cam2"], opt
@@ -187,6 +197,7 @@ def main(
 
     evaluators = {
         "E (poselib)": lambda i: eval_essential_estimator(i, estimator="poselib"),
+        "E (poselib,TS)": lambda i: eval_essential_estimator(i, estimator="poselib-TS"),
         "E (COLMAP)": lambda i: eval_essential_estimator(i, estimator="pycolmap"),
         "F (poselib)": lambda i: eval_fundamental_estimator(i, estimator="poselib"),
         "F (COLMAP)": lambda i: eval_fundamental_estimator(i, estimator="pycolmap"),
@@ -245,8 +256,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter = posebench.parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
+    posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter
+        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
-    posebench.print_metrics_per_dataset(metrics)
+    print_metrics_per_dataset(metrics)
