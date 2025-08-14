@@ -54,6 +54,7 @@ def main(
         ("cambridge_landmarks_KingsCollege", 6.0),
         ("cambridge_landmarks_StMarysChurch", 6.0),
         ("cambridge_landmarks_OldHospital", 6.0),
+        ("MegaScenes32k", 6.0),
     ]
 
     if len(dataset_filter) > 0:

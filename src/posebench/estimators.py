@@ -11,9 +11,6 @@ def clean_camera(cam, estimate_focal_length=False, estimate_extra_params=False):
     cam = poselib.Camera(cam.copy())
     if estimate_focal_length:
         cam.set_focal(1.0)
-
-    #if estimate_extra_params:
-        # Set distortion parameters to zero in this case
         for k in cam.extra_idx():
             cam.params[k] = 0.0
 
@@ -32,6 +29,8 @@ def absolute_pose_poselib(instance, estimate_focal_length=False, estimate_extra_
         instance["p2d"], instance["p3d"], cam, opt
     )
     tt2 = datetime.datetime.now()
+    #import ipdb
+    #ipdb.set_trace()
 
     (R, t) = (image.pose.R, image.pose.t)
     runtime = (tt2 - tt1).total_seconds()
