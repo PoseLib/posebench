@@ -13,10 +13,8 @@ from posebench.utils.geometry import (
     angle,
     calibrate_pts,
     eigen_quat_to_wxyz,
-    essential_from_pose,
     qvec2rotmat,
     rotation_angle,
-    sampson_error,
 )
 from posebench.utils.misc import (
     camera_dict_to_calib_matrix,
@@ -75,14 +73,21 @@ def eval_essential_estimator(instance, estimator="poselib"):
 
     return [err_R, err_t], (tt2 - tt1).total_seconds()
 
+
 def eval_calib_monodepth_estimator(instance, estimate_shift=False):
     opt = instance["opt"]
-    opt['monodepth_estimate_shift'] = estimate_shift
+    opt["monodepth_estimate_shift"] = estimate_shift
 
     tt1 = datetime.datetime.now()
     monodepth_geometry, info = poselib.estimate_monodepth_relative_pose(
-        instance["x1"], instance["x2"], instance['depth1'], instance['depth2'], instance["cam1"], instance["cam2"],
-        opt, {}
+        instance["x1"],
+        instance["x2"],
+        instance["depth1"],
+        instance["depth2"],
+        instance["cam1"],
+        instance["cam2"],
+        opt,
+        {},
     )
     tt2 = datetime.datetime.now()
     (R, t) = (monodepth_geometry.pose.R, monodepth_geometry.pose.t)
@@ -91,6 +96,7 @@ def eval_calib_monodepth_estimator(instance, estimate_shift=False):
     err_t = angle(instance["t"], t)
 
     return [err_R, err_t], (tt2 - tt1).total_seconds()
+
 
 def eval_fundamental_estimator(instance):
     opt = instance["opt"]
@@ -119,16 +125,17 @@ def eval_fundamental_estimator(instance):
 def force_instance_to_share_focals(instance):
     new_instance = copy.deepcopy(instance)
 
-    if np.any(new_instance['K1'] != new_instance['K2']):
-        kp2_h = np.column_stack([new_instance['x2'], np.ones(len(new_instance['x2']))])
-        kp2_new = (new_instance['K1'] @ (np.linalg.inv(new_instance['K2']) @ kp2_h.T)).T
+    if np.any(new_instance["K1"] != new_instance["K2"]):
+        kp2_h = np.column_stack([new_instance["x2"], np.ones(len(new_instance["x2"]))])
+        kp2_new = (new_instance["K1"] @ (np.linalg.inv(new_instance["K2"]) @ kp2_h.T)).T
         kp2_new = kp2_new[:, :2] / kp2_new[:, 2:]
 
-        new_instance['K2'] = new_instance['K1']
-        new_instance['x2'] = kp2_new
-        new_instance['cam2'] = new_instance['cam1']
+        new_instance["K2"] = new_instance["K1"]
+        new_instance["x2"] = kp2_new
+        new_instance["cam2"] = new_instance["cam1"]
 
     return new_instance
+
 
 def eval_shared_focal_estimator(instance):
     opt = instance["opt"]
@@ -151,6 +158,7 @@ def eval_shared_focal_estimator(instance):
 
     return [err_R, err_t], (tt2 - tt1).total_seconds()
 
+
 def eval_shared_focal_monodepth_estimator(instance):
     opt = instance["opt"]
 
@@ -161,7 +169,12 @@ def eval_shared_focal_monodepth_estimator(instance):
 
     tt1 = datetime.datetime.now()
     image_pair, info = poselib.estimate_monodepth_shared_focal_relative_pose(
-        instance["x1"] - pp1, instance["x2"] - pp2, instance['depth1'], instance['depth2'], opt, {}
+        instance["x1"] - pp1,
+        instance["x2"] - pp2,
+        instance["depth1"],
+        instance["depth2"],
+        opt,
+        {},
     )
     tt2 = datetime.datetime.now()
     pose = image_pair.geometry.pose
@@ -172,6 +185,7 @@ def eval_shared_focal_monodepth_estimator(instance):
 
     return [err_R, err_t], (tt2 - tt1).total_seconds()
 
+
 def eval_varying_focal_monodepth_estimator(instance):
     opt = instance["opt"]
 
@@ -180,7 +194,12 @@ def eval_varying_focal_monodepth_estimator(instance):
 
     tt1 = datetime.datetime.now()
     image_pair, info = poselib.estimate_monodepth_varying_focal_relative_pose(
-        instance["x1"] - pp1, instance["x2"] - pp2, instance['depth1'], instance['depth2'], opt, {}
+        instance["x1"] - pp1,
+        instance["x2"] - pp2,
+        instance["depth1"],
+        instance["depth2"],
+        opt,
+        {},
     )
     tt2 = datetime.datetime.now()
     pose = image_pair.geometry.pose
@@ -193,7 +212,7 @@ def eval_varying_focal_monodepth_estimator(instance):
 
 
 def main(
-    dataset_path="data/monodepth",
+    dataset_path="data/relative/monodepth",
     force_opt={},
     dataset_filter=[],
     method_filter=[],
@@ -223,15 +242,19 @@ def main(
         ("scannet_roma_moge", 2.0),
         ("scannet_roma_unidepth", 2.0),
         ("scannet_splg_moge", 2.0),
-        ("scannet_splg_unidepth", 2.0)
+        ("scannet_splg_unidepth", 2.0),
     ]
     if len(dataset_filter) > 0:
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
     evaluators = {
         "E": lambda i: eval_essential_estimator(i),
-        "RePoseD (calibrated)": lambda i: eval_calib_monodepth_estimator(i, estimate_shift=False),
-        "RePoseD (calibrated) with shift": lambda i: eval_calib_monodepth_estimator(i, estimate_shift=True),
+        "RePoseD (calibrated)": lambda i: eval_calib_monodepth_estimator(
+            i, estimate_shift=False
+        ),
+        "RePoseD (calibrated) with shift": lambda i: eval_calib_monodepth_estimator(
+            i, estimate_shift=True
+        ),
         "E + shared f": lambda i: eval_shared_focal_estimator(i),
         "RePoseD (shared focal)": lambda i: eval_shared_focal_monodepth_estimator(i),
         "F": lambda i: eval_fundamental_estimator(i),
@@ -295,8 +318,11 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter = posebench.parse_args()
+    force_opt, method_filter, dataset_filter, subsample, _ = posebench._parse_args()
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter
+        force_opt=force_opt,
+        method_filter=method_filter,
+        dataset_filter=dataset_filter,
+        subsample=subsample,
     )
     posebench.print_metrics_per_dataset(metrics)
