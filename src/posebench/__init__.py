@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any, Tuple
 
 import posebench.absolute_pose
 import posebench.relative_pose
+import posebench.monodepth_relative_pose
 import posebench.homography
 import argparse
 from posebench.utils.misc import (
@@ -90,6 +91,7 @@ def run_benchmark(
         "absolute pose": posebench.absolute_pose.main,
         "relative pose": posebench.relative_pose.main,
         "homography": posebench.homography.main,
+        "monodepth pose": posebench.monodepth_relative_pose.main,
     }
 
     start_time = datetime.datetime.now()
