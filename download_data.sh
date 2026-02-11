@@ -59,6 +59,35 @@ cd homography
 wget -N http://vision.maths.lth.se/viktor/posebench/homography/barath_Alamo.h5
 wget -N http://vision.maths.lth.se/viktor/posebench/homography/barath_NYC_Library.h5
 
-cd ../..
+cd ..
+cd relative
+mkdir monodepth
+cd monodepth
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/florence_cathedral_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/florence_cathedral_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/florence_cathedral_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/florence_cathedral_splg_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/lincoln_memorial_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/lincoln_memorial_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/lincoln_memorial_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/lincoln_memorial_splg_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/london_bridge_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/london_bridge_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/london_bridge_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/london_bridge_splg_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/milan_cathedral_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/milan_cathedral_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/milan_cathedral_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/milan_cathedral_splg_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/sagrada_familia_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/sagrada_familia_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/sagrada_familia_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/sagrada_familia_splg_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/scannet_roma_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/scannet_roma_unidepth.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/scannet_splg_moge.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/relative/monodepth/scannet_splg_unidepth.h5
+
+cd ../../..
 
 
