@@ -100,6 +100,10 @@ def main(
                 "max_iterations": 1000,
                 "min_iterations": 100,
                 "success_prob": 0.9999,
+            },
+            "bundle": {
+                "loss_type": "TRIVIAL",
+                "loss_scale": 1.0,
             }
         }
 

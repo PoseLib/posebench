@@ -29,14 +29,13 @@ def absolute_pose_poselib(instance, estimate_focal_length=False, estimate_extra_
         instance["p2d"], instance["p3d"], cam, opt
     )
     tt2 = datetime.datetime.now()
-    #import ipdb
-    #ipdb.set_trace()
 
     (R, t) = (image.pose.R, image.pose.t)
     runtime = (tt2 - tt1).total_seconds()
     err_R = rotation_angle(instance["R"] @ R.T)
     err_c = np.linalg.norm(instance["R"].T @ instance["t"] - R.T @ t)
 
+    
     if not estimate_focal_length:
         return {'rot': err_R, 'pos': err_c, 'rt': runtime}
     else:
@@ -58,6 +57,7 @@ def absolute_pose_pycolmap(instance, estimate_focal_length=False, estimate_extra
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
+    
     if result is None:
         err_R = 180
         err_c = np.inf
