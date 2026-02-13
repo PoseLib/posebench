@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 import posebench
 from posebench.utils.misc import (
+    deep_merge,
     print_metrics_per_dataset,
     compute_auc,
     h5_to_camera_dict,
@@ -100,8 +101,7 @@ def main(
             "bundle": {},
         }
 
-        for k, v in force_opt.items():
-            opt[k] = v
+        deep_merge(opt, force_opt)
 
         results = {}
         for k in evaluators.keys():

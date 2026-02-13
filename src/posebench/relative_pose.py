@@ -18,6 +18,7 @@ from posebench.utils.geometry import (
     sampson_error,
 )
 from posebench.utils.misc import (
+    deep_merge,
     print_metrics_per_dataset,
     camera_dict_to_calib_matrix,
     compute_auc,
@@ -97,19 +98,13 @@ def main(
         opt = {
             "max_error": threshold,
             "ransac": {
-                "max_iterations": 10000,
+                "max_iterations": 1000,
                 "min_iterations": 100,
                 "success_prob": 0.9999,
-            },
-            "bundle": {
-                "loss_type": "CAUCHY",
-                "loss_scale": 0.5 * threshold,
-                "gradient_tol": 1e-10
             }
         }
 
-        for k, v in force_opt.items():
-            opt[k] = v
+        deep_merge(opt, force_opt)
 
         results = {}
         for k in evaluators.keys():

@@ -9,6 +9,7 @@ from tqdm import tqdm
 import posebench
 from posebench.utils.geometry import eigen_quat_to_wxyz, qvec2rotmat, rotation_angle
 from posebench.utils.misc import (
+    deep_merge,
     print_metrics_per_dataset,
     compute_auc,
     h5_to_camera_dict,
@@ -96,8 +97,7 @@ def main(
         }
 
         # Add in global overrides
-        for k, v in force_opt.items():
-            opt[k] = v
+        deep_merge(opt, force_opt)
 
         data = list(f.items())
         if subsample is not None:

@@ -10,6 +10,7 @@ from tqdm import tqdm
 import posebench
 from posebench.utils.geometry import angle, rotation_angle
 from posebench.utils.misc import (
+    deep_merge,
     print_metrics_per_dataset,
     camera_dict_to_calib_matrix,
     compute_auc,
@@ -80,8 +81,7 @@ def main(
         }
 
         # Add in global overrides
-        for k, v in force_opt.items():
-            opt[k] = v
+        deep_merge(opt, force_opt)
 
         # Since the datasets are so large we only take the first 1k pairs
         pairs = list(f.keys())
