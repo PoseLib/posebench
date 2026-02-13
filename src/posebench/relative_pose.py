@@ -51,8 +51,8 @@ def main(
     subsample=None,
 ):
     datasets = [
-        ('fisheye_grossmunster_4342', 1.0),
-        ('fisheye_kirchenge_2731', 1.0),
+        #('fisheye_grossmunster_4342', 1.0),
+        #('fisheye_kirchenge_2731', 1.0),
         ("megadepth1500_sift", 1.0),
         ("megadepth1500_spsg", 1.0),
         ("megadepth1500_splg", 1.0),
@@ -97,13 +97,14 @@ def main(
         opt = {
             "max_error": threshold,
             "ransac": {
-                "max_iterations": 1000,
+                "max_iterations": 10000,
                 "min_iterations": 100,
                 "success_prob": 0.9999,
             },
             "bundle": {
-                "loss_type": "TRIVIAL",
-                "loss_scale": 1.0,
+                "loss_type": "CAUCHY",
+                "loss_scale": 0.5 * threshold,
+                "gradient_tol": 1e-10
             }
         }
 

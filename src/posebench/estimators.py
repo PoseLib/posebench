@@ -1,3 +1,4 @@
+import copy
 import poselib
 import pycolmap
 import datetime
@@ -218,3 +219,102 @@ def homography_pycolmap(instance):
     runtime = (tt2 - tt1).total_seconds()
     [err_r, err_t] = homography_error(H, instance)
     return {'rot': err_r, 't': err_t, 'rt': runtime}
+
+
+def force_instance_to_share_focals(instance):
+    new_instance = copy.deepcopy(instance)
+
+    if np.any(new_instance["K1"] != new_instance["K2"]):
+        kp2_h = np.column_stack([new_instance["x2"], np.ones(len(new_instance["x2"]))])
+        kp2_new = (new_instance["K1"] @ (np.linalg.inv(new_instance["K2"]) @ kp2_h.T)).T
+        kp2_new = kp2_new[:, :2] / kp2_new[:, 2:]
+
+        new_instance["K2"] = new_instance["K1"]
+        new_instance["x2"] = kp2_new
+        new_instance["cam2"] = new_instance["cam1"]
+
+    return new_instance
+
+
+def monodepth_calibrated_poselib(instance, estimate_shift=False):
+    opt = instance["opt"].copy()
+    opt["estimate_shift"] = estimate_shift
+
+    tt1 = datetime.datetime.now()
+    monodepth_geometry, info = poselib.estimate_monodepth_relative_pose(
+        instance["x1"], instance["x2"],
+        instance["depth1"], instance["depth2"],
+        instance["cam1"], instance["cam2"], opt,
+    )
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+    (R, t) = (monodepth_geometry.pose.R, monodepth_geometry.pose.t)
+
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+
+    return {'rot': err_R, 't': err_t, 'rt': runtime}
+
+
+def shared_focal_poselib(instance):
+    opt = instance["opt"].copy()
+    instance = force_instance_to_share_focals(instance)
+
+    pp1 = instance["K1"][:2, 2]
+    pp2 = instance["K2"][:2, 2]
+
+    tt1 = datetime.datetime.now()
+    image_pair, info = poselib.estimate_shared_focal_relative_pose(
+        instance["x1"] - pp1, instance["x2"] - pp2, np.array([0.0, 0.0]), opt,
+    )
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+    (R, t) = (image_pair.pose.R, image_pair.pose.t)
+
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+
+    return {'rot': err_R, 't': err_t, 'rt': runtime}
+
+
+def monodepth_shared_focal_poselib(instance):
+    opt = instance["opt"].copy()
+    instance = force_instance_to_share_focals(instance)
+
+    pp1 = instance["K1"][:2, 2]
+    pp2 = instance["K2"][:2, 2]
+
+    tt1 = datetime.datetime.now()
+    image_pair, info = poselib.estimate_monodepth_shared_focal_relative_pose(
+        instance["x1"] - pp1, instance["x2"] - pp2,
+        instance["depth1"], instance["depth2"], opt,
+    )
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+    (R, t) = (image_pair.geometry.pose.R, image_pair.geometry.pose.t)
+
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+
+    return {'rot': err_R, 't': err_t, 'rt': runtime}
+
+
+def monodepth_varying_focal_poselib(instance):
+    opt = instance["opt"].copy()
+
+    pp1 = instance["K1"][:2, 2]
+    pp2 = instance["K2"][:2, 2]
+
+    tt1 = datetime.datetime.now()
+    image_pair, info = poselib.estimate_monodepth_varying_focal_relative_pose(
+        instance["x1"] - pp1, instance["x2"] - pp2,
+        instance["depth1"], instance["depth2"], opt,
+    )
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+    (R, t) = (image_pair.geometry.pose.R, image_pair.geometry.pose.t)
+
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+
+    return {'rot': err_R, 't': err_t, 'rt': runtime}
