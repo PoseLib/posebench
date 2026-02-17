@@ -18,6 +18,18 @@ from posebench.utils.misc import (
 )
 from posebench.estimators import absolute_pose_poselib, absolute_pose_pycolmap
 
+DATASET_SUBPATH = "absolute"
+DATASETS = [
+    ("eth3d_130_dusmanu", 12.0),
+    ("7scenes_heads", 5.0),
+    ("7scenes_stairs", 5.0),
+    ("cambridge_landmarks_GreatCourt", 6.0),
+    ("cambridge_landmarks_ShopFacade", 6.0),
+    ("cambridge_landmarks_KingsCollege", 6.0),
+    ("cambridge_landmarks_StMarysChurch", 6.0),
+    ("cambridge_landmarks_OldHospital", 6.0),
+    ("MegaScenes32k", 6.0),
+]
 
 # Compute metrics for absolute pose estimation
 # AUC for camera center and avg/med for runtime
@@ -40,23 +52,14 @@ def compute_metrics(results, thresholds=[0.1, 1.0, 5.0]):
 
 
 def main(
-    dataset_path="data/absolute",
+    data_root="data",
     force_opt={},
     dataset_filter=[],
     method_filter=[],
     subsample=None,
 ):
-    datasets = [
-        ("eth3d_130_dusmanu", 12.0),
-        ("7scenes_heads", 5.0),
-        ("7scenes_stairs", 5.0),
-        ("cambridge_landmarks_GreatCourt", 6.0),
-        ("cambridge_landmarks_ShopFacade", 6.0),
-        ("cambridge_landmarks_KingsCollege", 6.0),
-        ("cambridge_landmarks_StMarysChurch", 6.0),
-        ("cambridge_landmarks_OldHospital", 6.0),
-        #("MegaScenes32k", 6.0),
-    ]
+    dataset_path = f"{data_root}/{DATASET_SUBPATH}"
+    datasets = list(DATASETS)
 
     if len(dataset_filter) > 0:
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
@@ -140,9 +143,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
-    posebench.download_data(subset)
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    data_root = posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
+        data_root=data_root, force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
     print_metrics_per_dataset(metrics)

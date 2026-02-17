@@ -20,6 +20,11 @@ from posebench.utils.misc import (
 )
 from posebench.estimators import homography_poselib, homography_pycolmap
 
+DATASET_SUBPATH = "homography"
+DATASETS = [
+    ("barath_Alamo", 1.0),
+    ("barath_NYC_Library", 1.0),
+]
 
 # Compute metrics for homography estimation
 # AUC for max(err_R,err_t) and avg/med for runtime
@@ -39,16 +44,14 @@ def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
 
 
 def main(
-    dataset_path="data/homography",
+    data_root="data",
     force_opt={},
     dataset_filter=[],
     method_filter=[],
     subsample=None,
 ):
-    datasets = [
-        ("barath_Alamo", 1.0),
-        ("barath_NYC_Library", 1.0),
-    ]
+    dataset_path = f"{data_root}/{DATASET_SUBPATH}"
+    datasets = list(DATASETS)
     if len(dataset_filter) > 0:
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
@@ -116,9 +119,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
-    posebench.download_data(subset)
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    data_root = posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
+        data_root=data_root, force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
     print_metrics_per_dataset(metrics)

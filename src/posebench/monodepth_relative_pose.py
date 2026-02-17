@@ -19,6 +19,33 @@ from posebench.estimators import (
     monodepth_varying_focal_poselib,
 )
 
+DATASET_SUBPATH = "relative/monodepth"
+DATASETS = [
+    ("florence_cathedral_roma_moge", 2.0),
+    ("florence_cathedral_roma_unidepth", 2.0),
+    ("florence_cathedral_splg_moge", 2.0),
+    ("florence_cathedral_splg_unidepth", 2.0),
+    ("lincoln_memorial_roma_moge", 2.0),
+    ("lincoln_memorial_roma_unidepth", 2.0),
+    ("lincoln_memorial_splg_moge", 2.0),
+    ("lincoln_memorial_splg_unidepth", 2.0),
+    ("london_bridge_roma_moge", 2.0),
+    ("london_bridge_roma_unidepth", 2.0),
+    ("london_bridge_splg_moge", 2.0),
+    ("london_bridge_splg_unidepth", 2.0),
+    ("milan_cathedral_roma_moge", 2.0),
+    ("milan_cathedral_roma_unidepth", 2.0),
+    ("milan_cathedral_splg_moge", 2.0),
+    ("milan_cathedral_splg_unidepth", 2.0),
+    ("sagrada_familia_roma_moge", 2.0),
+    ("sagrada_familia_roma_unidepth", 2.0),
+    ("sagrada_familia_splg_moge", 2.0),
+    ("sagrada_familia_splg_unidepth", 2.0),
+    ("scannet_roma_moge", 2.0),
+    ("scannet_roma_unidepth", 2.0),
+    ("scannet_splg_moge", 2.0),
+    ("scannet_splg_unidepth", 2.0),
+]
 
 # Compute metrics for relative pose estimation
 # AUC for max(err_R,err_t) and avg/med for runtime
@@ -37,38 +64,14 @@ def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
 
 
 def main(
-    dataset_path="data/relative/monodepth",
+    data_root="data",
     force_opt={},
     dataset_filter=[],
     method_filter=[],
     subsample=None,
 ):
-    datasets = [
-        ("florence_cathedral_roma_moge", 2.0),
-        ("florence_cathedral_roma_unidepth", 2.0),
-        ("florence_cathedral_splg_moge", 2.0),
-        ("florence_cathedral_splg_unidepth", 2.0),
-        ("lincoln_memorial_roma_moge", 2.0),
-        ("lincoln_memorial_roma_unidepth", 2.0),
-        ("lincoln_memorial_splg_moge", 2.0),
-        ("lincoln_memorial_splg_unidepth", 2.0),
-        ("london_bridge_roma_moge", 2.0),
-        ("london_bridge_roma_unidepth", 2.0),
-        ("london_bridge_splg_moge", 2.0),
-        ("london_bridge_splg_unidepth", 2.0),
-        ("milan_cathedral_roma_moge", 2.0),
-        ("milan_cathedral_roma_unidepth", 2.0),
-        ("milan_cathedral_splg_moge", 2.0),
-        ("milan_cathedral_splg_unidepth", 2.0),
-        ("sagrada_familia_roma_moge", 2.0),
-        ("sagrada_familia_roma_unidepth", 2.0),
-        ("sagrada_familia_splg_moge", 2.0),
-        ("sagrada_familia_splg_unidepth", 2.0),
-        ("scannet_roma_moge", 2.0),
-        ("scannet_roma_unidepth", 2.0),
-        ("scannet_splg_moge", 2.0),
-        ("scannet_splg_unidepth", 2.0),
-    ]
+    dataset_path = f"{data_root}/{DATASET_SUBPATH}"
+    datasets = list(DATASETS)
     if len(dataset_filter) > 0:
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
@@ -141,8 +144,10 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, _ = posebench._parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    data_root = posebench.download_data(subset)
     metrics, _ = main(
+        data_root=data_root,
         force_opt=force_opt,
         method_filter=method_filter,
         dataset_filter=dataset_filter,

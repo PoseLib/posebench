@@ -28,6 +28,32 @@ from posebench.utils.misc import (
 )
 from posebench.estimators import essential_poselib, essential_pycolmap, fundamental_poselib, fundamental_pycolmap
 
+DATASET_SUBPATH = "relative"
+DATASETS = [
+    ('fisheye_grossmunster_4342', 1.0),
+    ('fisheye_kirchenge_2731', 1.0),
+    ("megadepth1500_sift", 1.0),
+    ("megadepth1500_spsg", 1.0),
+    ("megadepth1500_splg", 1.0),
+    ("megadepth1500_roma", 1.0),
+    ("megadepth1500_dkm", 1.0),
+    ("megadepth1500_aspanformer", 1.0),
+    ("scannet1500_sift", 1.5),
+    ("scannet1500_spsg", 1.5),
+    ("scannet1500_roma", 2.5),
+    ("scannet1500_dkm", 2.5),
+    ("scannet1500_aspanformer", 2.5),
+    ("imc_british_museum", 0.75),
+    ("imc_london_bridge", 0.75),
+    ("imc_piazza_san_marco", 0.75),
+    ("imc_florence_cathedral_side", 0.75),
+    ("imc_milan_cathedral", 0.75),
+    ("imc_sagrada_familia", 0.75),
+    ("imc_lincoln_memorial_statue", 0.75),
+    ("imc_mount_rushmore", 0.75),
+    ("imc_st_pauls_cathedral", 0.75),
+]
+
 # Compute metrics for relative pose estimation
 # AUC for max(err_R,err_t) and avg/med for runtime
 def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
@@ -45,36 +71,14 @@ def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
 
 
 def main(
-    dataset_path="data/relative",
+    data_root="data",
     force_opt={},
     dataset_filter=[],
     method_filter=[],
     subsample=None,
 ):
-    datasets = [
-        #('fisheye_grossmunster_4342', 1.0),
-        #('fisheye_kirchenge_2731', 1.0),
-        ("megadepth1500_sift", 1.0),
-        ("megadepth1500_spsg", 1.0),
-        ("megadepth1500_splg", 1.0),
-        ("megadepth1500_roma", 1.0),
-        ("megadepth1500_dkm", 1.0),
-        ("megadepth1500_aspanformer", 1.0),
-        ("scannet1500_sift", 1.5),
-        ("scannet1500_spsg", 1.5),
-        ("scannet1500_roma", 2.5),
-        ("scannet1500_dkm", 2.5),
-        ("scannet1500_aspanformer", 2.5),
-        ("imc_british_museum", 0.75),
-        ("imc_london_bridge", 0.75),
-        ("imc_piazza_san_marco", 0.75),
-        ("imc_florence_cathedral_side", 0.75),
-        ("imc_milan_cathedral", 0.75),
-        ("imc_sagrada_familia", 0.75),
-        ("imc_lincoln_memorial_statue", 0.75),
-        ("imc_mount_rushmore", 0.75),
-        ("imc_st_pauls_cathedral", 0.75),
-    ]
+    dataset_path = f"{data_root}/{DATASET_SUBPATH}"
+    datasets = list(DATASETS)
     if len(dataset_filter) > 0:
         datasets = [(n, t) for (n, t) in datasets if substr_in_list(n, dataset_filter)]
 
@@ -140,9 +144,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, subset = posebench._parse_args()
-    posebench.download_data(subset)
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    data_root = posebench.download_data(subset)
     metrics, _ = main(
-        force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
+        data_root=data_root, force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
     )
     print_metrics_per_dataset(metrics)
