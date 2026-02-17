@@ -265,6 +265,11 @@ def print_comparison(ref_path, new_path, per_dataset=False):
         list(ref["problems"].keys()) + list(new["problems"].keys())
     ))
 
+    # Accumulate change summary across all problems
+    summary_better = {"slight": 0, "moderate": 0, "large": 0}
+    summary_worse = {"slight": 0, "moderate": 0, "large": 0}
+    summary_same = [0]
+
     for problem in all_problems:
         ref_prob = ref["problems"].get(problem, {"datasets": {}, "average": {}})
         new_prob = new["problems"].get(problem, {"datasets": {}, "average": {}})
@@ -297,8 +302,12 @@ def print_comparison(ref_path, new_path, per_dataset=False):
             if ref_avg or new_avg:
                 print(f"=== {problem} (average over {len(shared_datasets)} shared datasets) ===")
                 _print_comparison_block(ref_avg, new_avg)
-                _print_change_summary(ref_avg, new_avg)
+                _accumulate_changes(ref_avg, new_avg, summary_better, summary_worse, summary_same)
                 print("")
+
+    # Print global change summary
+    print("=== Summary (across all problems) ===")
+    _print_change_summary(summary_better, summary_worse, summary_same[0])
 
 
 def _compute_average_from_datasets(datasets_metrics):
@@ -375,12 +384,12 @@ def _classify_change(metric_name, ref_val, new_val):
 
     if "AUC" in name:
         ppt = abs(delta) * 100.0  # percentage points
-        if ppt < 0.5:
+        if ppt < 0.25:
             return "same", None
         direction = "better" if delta > 0 else "worse"
-        if ppt < 2.0:
+        if ppt < 1.0:
             return direction, "slight"
-        elif ppt < 5.0:
+        elif ppt < 2.5:
             return direction, "moderate"
         else:
             return direction, "large"
@@ -402,12 +411,12 @@ def _classify_change(metric_name, ref_val, new_val):
         return direction, "large"
 
 
-def _print_change_summary(ref_metrics, new_metrics):
-    """Print a summary of how many metrics improved/degraded/unchanged, with magnitude."""
-    better = {"slight": 0, "moderate": 0, "large": 0}
-    worse = {"slight": 0, "moderate": 0, "large": 0}
-    same = 0
+def _accumulate_changes(ref_metrics, new_metrics, better, worse, same_count):
+    """Accumulate change classifications from a pair of metric dicts into the provided counters.
 
+    better/worse are dicts with keys 'slight', 'moderate', 'large'.
+    same_count is a list with a single int element (mutable counter).
+    """
     all_methods = list(dict.fromkeys(
         list(ref_metrics.keys()) + list(new_metrics.keys())
     ))
@@ -424,8 +433,11 @@ def _print_change_summary(ref_metrics, new_metrics):
             elif direction == "worse":
                 worse[magnitude] += 1
             elif direction == "same":
-                same += 1
+                same_count[0] += 1
 
+
+def _print_change_summary(better, worse, same):
+    """Print a summary of how many metrics improved/degraded/unchanged, with magnitude bucketing."""
     total_better = sum(better.values())
     total_worse = sum(worse.values())
     total = total_better + total_worse + same
