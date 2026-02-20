@@ -1,19 +1,14 @@
-import datetime
 
 import h5py
 import numpy as np
-import poselib
-import pycolmap
 from tqdm import tqdm
 
 import posebench
-from posebench.utils.geometry import eigen_quat_to_wxyz, qvec2rotmat, rotation_angle
 from posebench.utils.misc import (
     deep_merge,
     print_metrics_per_dataset,
     compute_auc,
     h5_to_camera_dict,
-    poselib_opt_to_pycolmap_opt,
     substr_in_list,
 )
 from posebench.estimators import absolute_pose_poselib, absolute_pose_pycolmap
