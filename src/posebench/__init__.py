@@ -93,9 +93,10 @@ def download_data(subset: bool = False) -> str:
         if not Path(data_zipfile_name).is_file():
             print(f"Downloading {data_zipfile_name}...")
             download_file_with_progress(
-                f"https://github.com/Parskatt/storage/releases/download/posebench-v0.0.1/{data_zipfile_name}",
+                f"https://github.com/PoseLib/posebench/releases/download/v0.0.1/{data_zipfile_name}",
                 data_zipfile_name,
             )
+
         print("Extracting data...")
         with zipfile.ZipFile(data_zipfile_name, "r") as zip_ref:
             if subset:
