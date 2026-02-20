@@ -50,6 +50,7 @@ wget -N http://vision.maths.lth.se/viktor/posebench/absolute/cambridge_landmarks
 wget -N http://vision.maths.lth.se/viktor/posebench/absolute/cambridge_landmarks_GreatCourt.h5
 wget -N http://vision.maths.lth.se/viktor/posebench/absolute/cambridge_landmarks_ShopFacade.h5
 wget -N http://vision.maths.lth.se/viktor/posebench/absolute/eth3d_130_dusmanu.h5
+wget -N http://vision.maths.lth.se/viktor/posebench/absolute/MegaScenes32k.h5
 
 cd ..
 mkdir homography
