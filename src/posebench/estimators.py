@@ -1,7 +1,11 @@
 import copy
 import poselib
-import pycolmap
 import datetime
+
+try:
+    import pycolmap
+except ImportError:
+    pass
 import numpy as np
 from posebench.utils.geometry import rotation_angle, eigen_quat_to_wxyz, qvec2rotmat, angle
 from posebench.utils.misc import poselib_opt_to_pycolmap_opt, camera_dict_to_calib_matrix

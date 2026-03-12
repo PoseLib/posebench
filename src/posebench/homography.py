@@ -11,7 +11,11 @@ from posebench.utils.misc import (
     h5_to_camera_dict,
     substr_in_list,
 )
-from posebench.estimators import homography_poselib, homography_pycolmap
+from posebench.estimators import homography_poselib
+from posebench.utils.misc import has_pycolmap
+
+if has_pycolmap():
+    from posebench.estimators import homography_pycolmap
 
 DATASET_SUBPATH = "homography"
 DATASETS = [
@@ -50,8 +54,9 @@ def main(
 
     evaluators = {
         "H (poselib)": lambda i: homography_poselib(i),
-        "H (COLMAP)": lambda i: homography_pycolmap(i),
     }
+    if has_pycolmap():
+        evaluators["H (COLMAP)"] = lambda i: homography_pycolmap(i)
     if len(method_filter) > 0:
         evaluators = {
             k: v for (k, v) in evaluators.items() if substr_in_list(k, method_filter)

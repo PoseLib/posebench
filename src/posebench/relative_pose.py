@@ -11,7 +11,11 @@ from posebench.utils.misc import (
     h5_to_camera_dict,
     substr_in_list,
 )
-from posebench.estimators import essential_poselib, essential_pycolmap, fundamental_poselib, fundamental_pycolmap
+from posebench.estimators import essential_poselib, fundamental_poselib
+from posebench.utils.misc import has_pycolmap
+
+if has_pycolmap():
+    from posebench.estimators import essential_pycolmap, fundamental_pycolmap
 
 DATASET_SUBPATH = "relative"
 DATASETS = [
@@ -70,10 +74,11 @@ def main(
     evaluators = {
         "E (poselib)": lambda i: essential_poselib(i),
         "E (poselib,TS)": lambda i: essential_poselib(i, tangent_sampson=True),
-        "E (COLMAP)": lambda i: essential_pycolmap(i),
         "F (poselib)": lambda i: fundamental_poselib(i),
-        "F (COLMAP)": lambda i: fundamental_pycolmap(i),
     }
+    if has_pycolmap():
+        evaluators["E (COLMAP)"] = lambda i: essential_pycolmap(i)
+        evaluators["F (COLMAP)"] = lambda i: fundamental_pycolmap(i)
     if len(method_filter) > 0:
         evaluators = {
             k: v for (k, v) in evaluators.items() if substr_in_list(k, method_filter)

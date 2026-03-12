@@ -11,7 +11,11 @@ from posebench.utils.misc import (
     h5_to_camera_dict,
     substr_in_list,
 )
-from posebench.estimators import absolute_pose_poselib, absolute_pose_pycolmap
+from posebench.estimators import absolute_pose_poselib
+from posebench.utils.misc import has_pycolmap
+
+if has_pycolmap():
+    from posebench.estimators import absolute_pose_pycolmap
 
 DATASET_SUBPATH = "absolute"
 DATASETS = [
@@ -61,14 +65,13 @@ def main(
 
     evaluators = {
         "PnP (poselib)": lambda i: absolute_pose_poselib(i),
-        "PnP (COLMAP)": lambda i: absolute_pose_pycolmap(i),
-
         "PnPf (poselib)": lambda i: absolute_pose_poselib(i, estimate_focal_length=True),
-        "PnPf (COLMAP)": lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True),
-
         "PnPfr (poselib)": lambda i: absolute_pose_poselib(i, estimate_focal_length=True, estimate_extra_params=True),
-        "PnPfr (COLMAP)": lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True, estimate_extra_params=True),
     }
+    if has_pycolmap():
+        evaluators["PnP (COLMAP)"] = lambda i: absolute_pose_pycolmap(i)
+        evaluators["PnPf (COLMAP)"] = lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True)
+        evaluators["PnPfr (COLMAP)"] = lambda i: absolute_pose_pycolmap(i, estimate_focal_length=True, estimate_extra_params=True)
 
     if len(method_filter) > 0:
         evaluators = {

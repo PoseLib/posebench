@@ -2,10 +2,19 @@ import json
 from pathlib import Path
 
 import numpy as np
-import pycolmap
 import requests
 from tqdm import tqdm
 import poselib
+
+try:
+    import pycolmap
+    _HAS_PYCOLMAP = True
+except ImportError:
+    _HAS_PYCOLMAP = False
+
+
+def has_pycolmap():
+    return _HAS_PYCOLMAP
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -28,6 +37,11 @@ def substr_in_list(s, lst):
 
 
 def poselib_opt_to_pycolmap_opt(opt):
+    if not _HAS_PYCOLMAP:
+        raise ImportError(
+            "pycolmap is required for COLMAP estimators. "
+            "Install with: pip install posebench[colmap]"
+        )
     pyc_opt = pycolmap.RANSACOptions()
 
     if "max_error" in opt:

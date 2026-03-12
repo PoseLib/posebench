@@ -14,6 +14,7 @@ import posebench.homography
 import argparse
 from posebench.utils.misc import (
     download_file_with_progress,
+    has_pycolmap,
     print_metrics_per_method_table,
     compute_average_metrics,
     save_results,
@@ -53,6 +54,8 @@ def _parse_args():
                         help="Show per-dataset breakdowns in comparison (use with --compare)")
     parser.add_argument("--create_baseline", required=False, action="store_true",
                         help="Run benchmark and save results as the baseline for future auto-comparisons.")
+    parser.add_argument("--only-poselib", required=False, action="store_true",
+                        help="Run only PoseLib methods (skip COLMAP methods)")
     args = parser.parse_args()
 
     force_opt = {}
@@ -78,7 +81,7 @@ def _parse_args():
     dataset_filter = []
     if args.dataset is not None:
         dataset_filter = args.dataset.split(",")
-    return force_opt, method_filter, dataset_filter, args.subsample, args.subset, args.output, args.no_save, args.compare, args.per_dataset, args.create_subset, args.create_baseline
+    return force_opt, method_filter, dataset_filter, args.subsample, args.subset, args.output, args.no_save, args.compare, args.per_dataset, args.create_subset, args.create_baseline, args.only_poselib
 
 
 def download_data(subset: bool = False) -> str:
@@ -168,6 +171,7 @@ def run_benchmark(
     output: Optional[str] = None,
     no_save: bool = False,
     print_results: bool = True,
+    only_poselib: bool = False,
 ) -> Tuple[Dict[str, Any], List[str], Optional[str]]:
     # Build force_opt dictionary
     force_opt = {}
@@ -192,6 +196,13 @@ def run_benchmark(
         method_filter = []
     if dataset_filter is None:
         dataset_filter = []
+
+    if only_poselib:
+        method_filter = ["poselib"]
+    elif not has_pycolmap():
+        print("Note: pycolmap not installed. Running PoseLib methods only. "
+              "Install with: pip install posebench[colmap]")
+        method_filter = ["poselib"]
 
     data_root = download_data(subset)
 
@@ -267,7 +278,7 @@ def _baseline_path(subset: bool) -> Path:
 
 def main():
     """Console script entry point."""
-    force_opt, method_filter, dataset_filter, subsample, subset, output, no_save, compare, per_dataset, create_subset, create_baseline = _parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset, output, no_save, compare, per_dataset, create_subset, create_baseline, only_poselib = _parse_args()
 
     if create_subset is not None:
         create_subset_data(max_instances=create_subset)
@@ -311,6 +322,7 @@ def main():
         output=output,
         no_save=no_save,
         print_results=not auto_compare,
+        only_poselib=only_poselib,
     )
 
     if auto_compare and saved_path is not None:
