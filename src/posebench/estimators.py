@@ -9,7 +9,6 @@ except ImportError:
 import numpy as np
 from posebench.utils.geometry import rotation_angle, eigen_quat_to_wxyz, qvec2rotmat, angle
 from posebench.utils.misc import poselib_opt_to_pycolmap_opt, camera_dict_to_calib_matrix
-import cv2
 
 
 def clean_camera(cam, estimate_focal_length=False, estimate_extra_params=False):
@@ -90,13 +89,14 @@ def homography_error(H, instance):
     K1 = camera_dict_to_calib_matrix(instance["cam1"])
     K2 = camera_dict_to_calib_matrix(instance["cam2"])
     Hnorm = np.linalg.inv(K2) @ H @ K1
-    _, rotations, translations, _ = cv2.decomposeHomographyMat(Hnorm, np.identity(3))
+    poses, _ = poselib.motion_from_homography(Hnorm)
 
     best_err_R = 180.0
     best_err_t = 180.0
-    for k in range(len(rotations)):
-        R = rotations[k]
-        t = translations[k][:, 0]
+    for k in range(len(poses)):
+        pose = poses[k]
+        R = pose.R
+        t = pose.t
 
         err_R = rotation_angle(instance["R"] @ R.T)
         err_t = angle(instance["t"], t)
