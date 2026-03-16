@@ -29,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pybind11-stubgen
+        pip install numpy pybind11-stubgen
         pip install -e ".[dev]"
 
     - name: Check formatting using ruff
