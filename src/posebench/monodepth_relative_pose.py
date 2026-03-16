@@ -47,6 +47,7 @@ DATASETS = [
     ("scannet_splg_unidepth", 2.0),
 ]
 
+
 # Compute metrics for relative pose estimation
 # AUC for max(err_R,err_t) and avg/med for runtime
 def compute_metrics(results, thresholds=[5.0, 10.0, 20.0]):
@@ -77,8 +78,12 @@ def main(
 
     evaluators = {
         "E": lambda i: essential_poselib(i),
-        "RePoseD (calibrated)": lambda i: monodepth_calibrated_poselib(i, estimate_shift=False),
-        "RePoseD (calibrated) with shift": lambda i: monodepth_calibrated_poselib(i, estimate_shift=True),
+        "RePoseD (calibrated)": lambda i: monodepth_calibrated_poselib(
+            i, estimate_shift=False
+        ),
+        "RePoseD (calibrated) with shift": lambda i: monodepth_calibrated_poselib(
+            i, estimate_shift=True
+        ),
         "E + shared f": lambda i: shared_focal_poselib(i),
         "RePoseD (shared focal)": lambda i: monodepth_shared_focal_poselib(i),
         "F": lambda i: fundamental_poselib(i),
@@ -144,7 +149,9 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = (
+        posebench._parse_args()
+    )
     data_root = posebench.download_data(subset)
     metrics, _ = main(
         data_root=data_root,

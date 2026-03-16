@@ -1,4 +1,3 @@
-
 import h5py
 import numpy as np
 from tqdm import tqdm
@@ -22,6 +21,7 @@ DATASETS = [
     ("barath_Alamo", 1.0),
     ("barath_NYC_Library", 1.0),
 ]
+
 
 # Compute metrics for homography estimation
 # AUC for max(err_R,err_t) and avg/med for runtime
@@ -74,11 +74,11 @@ def main(
         # RANSAC options
         opt = {
             "max_error": threshold,
-            "ransac":{
+            "ransac": {
                 "max_iterations": 1000,
                 "min_iterations": 100,
                 "success_prob": 0.9999,
-            }
+            },
         }
 
         # Add in global overrides
@@ -117,9 +117,15 @@ def main(
 
 
 if __name__ == "__main__":
-    force_opt, method_filter, dataset_filter, subsample, subset, *_ = posebench._parse_args()
+    force_opt, method_filter, dataset_filter, subsample, subset, *_ = (
+        posebench._parse_args()
+    )
     data_root = posebench.download_data(subset)
     metrics, _ = main(
-        data_root=data_root, force_opt=force_opt, method_filter=method_filter, dataset_filter=dataset_filter, subsample=subsample
+        data_root=data_root,
+        force_opt=force_opt,
+        method_filter=method_filter,
+        dataset_filter=dataset_filter,
+        subsample=subsample,
     )
     print_metrics_per_dataset(metrics)
