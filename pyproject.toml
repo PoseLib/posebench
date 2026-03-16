@@ -21,6 +21,7 @@ posebench = "posebench:main"
 [project.optional-dependencies]
 colmap = ["pycolmap>=3.12.3"]
 dev = [
+    "pybind11-stubgen",
     "ruff==0.15.0",
     "pytest>=8.3.5",
 ]
