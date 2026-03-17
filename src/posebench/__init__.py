@@ -42,20 +42,46 @@ def _parse_args():
         type=int,
         metavar="N",
         help="Create subsampled dataset: uniformly sample up to N instances per dataset "
-             "and write to data-subsampled-N/ + zip. Default N=10.",
+        "and write to data-subsampled-N/ + zip. Default N=10.",
     )
-    parser.add_argument("--output", required=False, type=str, default=None,
-                        help="Output path for results JSON (default: results/<timestamp>.json)")
-    parser.add_argument("--no-save", required=False, action="store_true",
-                        help="Do not save results to file")
-    parser.add_argument("--compare", required=False, nargs="+", metavar="FILE",
-                        help="Compare result files. With two args: REF NEW. With one arg: compares results/baseline.json vs FILE")
-    parser.add_argument("--per-dataset", required=False, action="store_true",
-                        help="Show per-dataset breakdowns in comparison (use with --compare)")
-    parser.add_argument("--create_baseline", required=False, action="store_true",
-                        help="Run benchmark and save results as the baseline for future auto-comparisons.")
-    parser.add_argument("--only-poselib", required=False, action="store_true",
-                        help="Run only PoseLib methods (skip COLMAP methods)")
+    parser.add_argument(
+        "--output",
+        required=False,
+        type=str,
+        default=None,
+        help="Output path for results JSON (default: results/<timestamp>.json)",
+    )
+    parser.add_argument(
+        "--no-save",
+        required=False,
+        action="store_true",
+        help="Do not save results to file",
+    )
+    parser.add_argument(
+        "--compare",
+        required=False,
+        nargs="+",
+        metavar="FILE",
+        help="Compare result files. With two args: REF NEW. With one arg: compares results/baseline.json vs FILE",
+    )
+    parser.add_argument(
+        "--per-dataset",
+        required=False,
+        action="store_true",
+        help="Show per-dataset breakdowns in comparison (use with --compare)",
+    )
+    parser.add_argument(
+        "--create_baseline",
+        required=False,
+        action="store_true",
+        help="Run benchmark and save results as the baseline for future auto-comparisons.",
+    )
+    parser.add_argument(
+        "--only-poselib",
+        required=False,
+        action="store_true",
+        help="Run only PoseLib methods (skip COLMAP methods)",
+    )
     args = parser.parse_args()
 
     force_opt = {}
@@ -81,7 +107,20 @@ def _parse_args():
     dataset_filter = []
     if args.dataset is not None:
         dataset_filter = args.dataset.split(",")
-    return force_opt, method_filter, dataset_filter, args.subsample, args.subset, args.output, args.no_save, args.compare, args.per_dataset, args.create_subset, args.create_baseline, args.only_poselib
+    return (
+        force_opt,
+        method_filter,
+        dataset_filter,
+        args.subsample,
+        args.subset,
+        args.output,
+        args.no_save,
+        args.compare,
+        args.per_dataset,
+        args.create_subset,
+        args.create_baseline,
+        args.only_poselib,
+    )
 
 
 def download_data(subset: bool = False) -> str:
@@ -107,7 +146,7 @@ def download_data(subset: bool = False) -> str:
                 Path(data_root).mkdir(parents=True, exist_ok=True)
                 for info in zip_ref.infolist():
                     if info.filename.startswith("data/"):
-                        info.filename = info.filename[len("data/"):]
+                        info.filename = info.filename[len("data/") :]
                     if info.filename:
                         zip_ref.extract(info, data_root)
             else:
@@ -115,6 +154,7 @@ def download_data(subset: bool = False) -> str:
         os.remove(data_zipfile_name)
 
     return data_root
+
 
 def create_subset_data(max_instances: int = 10):
     """Create uniformly subsampled h5 files from the full dataset and zip them."""
@@ -124,10 +164,13 @@ def create_subset_data(max_instances: int = 10):
     zip_name = f"data-subsampled-{max_instances}.zip"
 
     problems = [
-        (posebench.relative_pose.DATASETS,              posebench.relative_pose.DATASET_SUBPATH),
-        (posebench.absolute_pose.DATASETS,              posebench.absolute_pose.DATASET_SUBPATH),
-        (posebench.homography.DATASETS,                 posebench.homography.DATASET_SUBPATH),
-        (posebench.monodepth_relative_pose.DATASETS,    posebench.monodepth_relative_pose.DATASET_SUBPATH),
+        (posebench.relative_pose.DATASETS, posebench.relative_pose.DATASET_SUBPATH),
+        (posebench.absolute_pose.DATASETS, posebench.absolute_pose.DATASET_SUBPATH),
+        (posebench.homography.DATASETS, posebench.homography.DATASET_SUBPATH),
+        (
+            posebench.monodepth_relative_pose.DATASETS,
+            posebench.monodepth_relative_pose.DATASET_SUBPATH,
+        ),
     ]
 
     for datasets, dataset_subpath in problems:
@@ -156,7 +199,9 @@ def create_subset_data(max_instances: int = 10):
             zf.write(file, arcname)
 
     print(f"Done. Subsampled h5 files in {output_root}/")
-    print(f"Zip created: {zip_name}  (extract to data-subsampled-{max_instances}/ with: unzip {zip_name} -d data-subsampled-{max_instances})")
+    print(
+        f"Zip created: {zip_name}  (extract to data-subsampled-{max_instances}/ with: unzip {zip_name} -d data-subsampled-{max_instances})"
+    )
 
 
 def run_benchmark(
@@ -200,8 +245,10 @@ def run_benchmark(
     if only_poselib:
         method_filter = ["poselib"]
     elif not has_pycolmap():
-        print("Note: pycolmap not installed. Running PoseLib methods only. "
-              "Install with: pip install posebench[colmap]")
+        print(
+            "Note: pycolmap not installed. Running PoseLib methods only. "
+            "Install with: pip install posebench[colmap]"
+        )
         method_filter = ["poselib"]
 
     data_root = download_data(subset)
@@ -257,7 +304,9 @@ def run_benchmark(
 
         metadata = {
             "timestamp": start_time.isoformat(),
-            "poselib_version": str(getattr(__import__("poselib"), "__version__", "unknown")),
+            "poselib_version": str(
+                getattr(__import__("poselib"), "__version__", "unknown")
+            ),
             "force_opt": force_opt,
             "method_filter": method_filter,
             "dataset_filter": dataset_filter,
@@ -278,7 +327,20 @@ def _baseline_path(subset: bool) -> Path:
 
 def main():
     """Console script entry point."""
-    force_opt, method_filter, dataset_filter, subsample, subset, output, no_save, compare, per_dataset, create_subset, create_baseline, only_poselib = _parse_args()
+    (
+        force_opt,
+        method_filter,
+        dataset_filter,
+        subsample,
+        subset,
+        output,
+        no_save,
+        compare,
+        per_dataset,
+        create_subset,
+        create_baseline,
+        only_poselib,
+    ) = _parse_args()
 
     if create_subset is not None:
         create_subset_data(max_instances=create_subset)
@@ -304,11 +366,7 @@ def main():
         output = str(baseline_path)
         no_save = False
 
-    auto_compare = (
-        not create_baseline
-        and not no_save
-        and baseline_path.is_file()
-    )
+    auto_compare = not create_baseline and not no_save and baseline_path.is_file()
 
     _, _, saved_path = run_benchmark(
         min_iterations=force_opt.get("ransac", {}).get("min_iterations"),

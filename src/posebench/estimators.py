@@ -7,8 +7,16 @@ try:
 except ImportError:
     pass
 import numpy as np
-from posebench.utils.geometry import rotation_angle, eigen_quat_to_wxyz, qvec2rotmat, angle
-from posebench.utils.misc import poselib_opt_to_pycolmap_opt, camera_dict_to_calib_matrix
+from posebench.utils.geometry import (
+    rotation_angle,
+    eigen_quat_to_wxyz,
+    qvec2rotmat,
+    angle,
+)
+from posebench.utils.misc import (
+    poselib_opt_to_pycolmap_opt,
+    camera_dict_to_calib_matrix,
+)
 
 
 def clean_camera(cam, estimate_focal_length=False, estimate_extra_params=False):
@@ -20,7 +28,10 @@ def clean_camera(cam, estimate_focal_length=False, estimate_extra_params=False):
 
     return cam.todict()
 
-def absolute_pose_poselib(instance, estimate_focal_length=False, estimate_extra_params=False):
+
+def absolute_pose_poselib(
+    instance, estimate_focal_length=False, estimate_extra_params=False
+):
     opt = instance["opt"].copy()
     cam = clean_camera(instance["cam"], estimate_focal_length, estimate_extra_params)
     if estimate_focal_length:
@@ -39,16 +50,17 @@ def absolute_pose_poselib(instance, estimate_focal_length=False, estimate_extra_
     err_R = rotation_angle(instance["R"] @ R.T)
     err_c = np.linalg.norm(instance["R"].T @ instance["t"] - R.T @ t)
 
-    
     if not estimate_focal_length:
-        return {'rot': err_R, 'pos': err_c, 'rt': runtime}
+        return {"rot": err_R, "pos": err_c, "rt": runtime}
     else:
         cam_gt = poselib.Camera(instance["cam"])
         focal_err = (cam_gt.focal() - image.camera.focal()) / cam_gt.focal()
-        return {'rot': err_R, 'pos': err_c, 'focal': focal_err, 'rt': runtime}
-    
+        return {"rot": err_R, "pos": err_c, "focal": focal_err, "rt": runtime}
 
-def absolute_pose_pycolmap(instance, estimate_focal_length=False, estimate_extra_params=False):
+
+def absolute_pose_pycolmap(
+    instance, estimate_focal_length=False, estimate_extra_params=False
+):
     opt = poselib_opt_to_pycolmap_opt(instance["opt"])
     cam = clean_camera(instance["cam"], estimate_focal_length, estimate_extra_params)
     cam = pycolmap.Camera(cam)
@@ -61,7 +73,7 @@ def absolute_pose_pycolmap(instance, estimate_focal_length=False, estimate_extra
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
-    
+
     if result is None:
         err_R = 180
         err_c = np.inf
@@ -70,19 +82,17 @@ def absolute_pose_pycolmap(instance, estimate_focal_length=False, estimate_extra
         t = result["cam_from_world"].translation
         err_R = rotation_angle(instance["R"] @ R.T)
         err_c = np.linalg.norm(instance["R"].T @ instance["t"] - R.T @ t)
-    
+
     if not estimate_focal_length:
-        return {'rot': err_R, 'pos': err_c, 'rt': runtime}
+        return {"rot": err_R, "pos": err_c, "rt": runtime}
     else:
-#        cam_dict = cam.todict()
-#        cam_dict['model'] = instance['cam']['model']
-        cam_gt = poselib.Camera(instance['cam'])
-#        cam_est = poselib.Camera(cam_dict)
+        #        cam_dict = cam.todict()
+        #        cam_dict['model'] = instance['cam']['model']
+        cam_gt = poselib.Camera(instance["cam"])
+        #        cam_est = poselib.Camera(cam_dict)
 
         focal_err = (cam_gt.focal() - cam.mean_focal_length()) / cam_gt.focal()
-        return {'rot': err_R, 'pos': err_c, 'focal': focal_err, 'rt': runtime}
-    
-
+        return {"rot": err_R, "pos": err_c, "focal": focal_err, "rt": runtime}
 
 
 def homography_error(H, instance):
@@ -108,12 +118,10 @@ def homography_error(H, instance):
     return best_err_R, best_err_t
 
 
-
-
 def essential_poselib(instance, tangent_sampson=False):
     opt = instance["opt"].copy()
     if tangent_sampson:
-        opt['tangent_sampson'] = True
+        opt["tangent_sampson"] = True
 
     tt1 = datetime.datetime.now()
     pose, info = poselib.estimate_relative_pose(
@@ -122,11 +130,12 @@ def essential_poselib(instance, tangent_sampson=False):
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
     (R, t) = (pose.R, pose.t)
-    
+
     err_R = rotation_angle(instance["R"] @ R.T)
     err_t = angle(instance["t"], t)
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}
+
 
 def essential_pycolmap(instance):
     opt = poselib_opt_to_pycolmap_opt(instance["opt"])
@@ -146,8 +155,7 @@ def essential_pycolmap(instance):
         err_R = 180.0
         err_t = 180.0
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
-
+    return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
 def fundamental_error(F, instance):
@@ -155,7 +163,7 @@ def fundamental_error(F, instance):
     K2 = camera_dict_to_calib_matrix(instance["cam2"])
     E = K2.T @ F @ K1
 
-    poses = poselib.motion_from_essential(E, np.zeros((0,3)), np.zeros((0,3)))
+    poses = poselib.motion_from_essential(E, np.zeros((0, 3)), np.zeros((0, 3)))
 
     best_err_R = 180.0
     best_err_t = 180.0
@@ -173,7 +181,6 @@ def fundamental_error(F, instance):
     return best_err_R, best_err_t
 
 
-
 def fundamental_poselib(instance):
     opt = instance["opt"].copy()
     tt1 = datetime.datetime.now()
@@ -182,23 +189,21 @@ def fundamental_poselib(instance):
     runtime = (tt2 - tt1).total_seconds()
 
     err_R, err_t = fundamental_error(F, instance)
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}
+
 
 def fundamental_pycolmap(instance):
-    opt = poselib_opt_to_pycolmap_opt(instance['opt'])
+    opt = poselib_opt_to_pycolmap_opt(instance["opt"])
     tt1 = datetime.datetime.now()
-    result = pycolmap.estimate_fundamental_matrix(
-        instance["x1"], instance["x2"], opt
-    )
+    result = pycolmap.estimate_fundamental_matrix(instance["x1"], instance["x2"], opt)
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
     if result is None or "F" not in result:
-        return  {'rot': 180.0, 't': 180.0, 'rt': runtime}
+        return {"rot": 180.0, "t": 180.0, "rt": runtime}
     F = result["F"]
 
     err_R, err_t = fundamental_error(F, instance)
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
-
+    return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
 def homography_poselib(instance):
@@ -208,21 +213,18 @@ def homography_poselib(instance):
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
     [err_r, err_t] = homography_error(H, instance)
-    return {'rot': err_r, 't': err_t, 'rt': runtime}
-    
+    return {"rot": err_r, "t": err_t, "rt": runtime}
 
 
 def homography_pycolmap(instance):
-    opt = poselib_opt_to_pycolmap_opt(instance['opt'])
+    opt = poselib_opt_to_pycolmap_opt(instance["opt"])
     tt1 = datetime.datetime.now()
-    result = pycolmap.estimate_homography_matrix(
-        instance["x1"], instance["x2"], opt
-    )
+    result = pycolmap.estimate_homography_matrix(instance["x1"], instance["x2"], opt)
     tt2 = datetime.datetime.now()
     H = result["H"]
     runtime = (tt2 - tt1).total_seconds()
     [err_r, err_t] = homography_error(H, instance)
-    return {'rot': err_r, 't': err_t, 'rt': runtime}
+    return {"rot": err_r, "t": err_t, "rt": runtime}
 
 
 def force_instance_to_share_focals(instance):
@@ -246,9 +248,13 @@ def monodepth_calibrated_poselib(instance, estimate_shift=False):
 
     tt1 = datetime.datetime.now()
     monodepth_geometry, info = poselib.estimate_monodepth_relative_pose(
-        instance["x1"], instance["x2"],
-        instance["depth1"], instance["depth2"],
-        instance["cam1"], instance["cam2"], opt,
+        instance["x1"],
+        instance["x2"],
+        instance["depth1"],
+        instance["depth2"],
+        instance["cam1"],
+        instance["cam2"],
+        opt,
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
@@ -257,7 +263,7 @@ def monodepth_calibrated_poselib(instance, estimate_shift=False):
     err_R = rotation_angle(instance["R"] @ R.T)
     err_t = angle(instance["t"], t)
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
 def shared_focal_poselib(instance):
@@ -269,7 +275,10 @@ def shared_focal_poselib(instance):
 
     tt1 = datetime.datetime.now()
     image_pair, info = poselib.estimate_shared_focal_relative_pose(
-        instance["x1"] - pp1, instance["x2"] - pp2, np.array([0.0, 0.0]), opt,
+        instance["x1"] - pp1,
+        instance["x2"] - pp2,
+        np.array([0.0, 0.0]),
+        opt,
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
@@ -278,7 +287,7 @@ def shared_focal_poselib(instance):
     err_R = rotation_angle(instance["R"] @ R.T)
     err_t = angle(instance["t"], t)
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
 def monodepth_shared_focal_poselib(instance):
@@ -290,8 +299,11 @@ def monodepth_shared_focal_poselib(instance):
 
     tt1 = datetime.datetime.now()
     image_pair, info = poselib.estimate_monodepth_shared_focal_relative_pose(
-        instance["x1"] - pp1, instance["x2"] - pp2,
-        instance["depth1"], instance["depth2"], opt,
+        instance["x1"] - pp1,
+        instance["x2"] - pp2,
+        instance["depth1"],
+        instance["depth2"],
+        opt,
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
@@ -300,7 +312,7 @@ def monodepth_shared_focal_poselib(instance):
     err_R = rotation_angle(instance["R"] @ R.T)
     err_t = angle(instance["t"], t)
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
 def monodepth_varying_focal_poselib(instance):
@@ -311,8 +323,11 @@ def monodepth_varying_focal_poselib(instance):
 
     tt1 = datetime.datetime.now()
     image_pair, info = poselib.estimate_monodepth_varying_focal_relative_pose(
-        instance["x1"] - pp1, instance["x2"] - pp2,
-        instance["depth1"], instance["depth2"], opt,
+        instance["x1"] - pp1,
+        instance["x2"] - pp2,
+        instance["depth1"],
+        instance["depth2"],
+        opt,
     )
     tt2 = datetime.datetime.now()
     runtime = (tt2 - tt1).total_seconds()
@@ -321,4 +336,4 @@ def monodepth_varying_focal_poselib(instance):
     err_R = rotation_angle(instance["R"] @ R.T)
     err_t = angle(instance["t"], t)
 
-    return {'rot': err_R, 't': err_t, 'rt': runtime}
+    return {"rot": err_R, "t": err_t, "rt": runtime}

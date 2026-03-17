@@ -8,6 +8,7 @@ import poselib
 
 try:
     import pycolmap
+
     _HAS_PYCOLMAP = True
 except ImportError:
     _HAS_PYCOLMAP = False
@@ -219,9 +220,7 @@ def save_results(path, all_metrics, metadata=None):
         for dataset, dataset_metrics in metrics.items():
             datasets[dataset] = {}
             for method, res in dataset_metrics.items():
-                datasets[dataset][method] = {
-                    k: float(v) for k, v in res.items()
-                }
+                datasets[dataset][method] = {k: float(v) for k, v in res.items()}
 
         avg = compute_average_metrics(metrics)
         average = {}
@@ -275,9 +274,9 @@ def print_comparison(ref_path, new_path, per_dataset=False):
     print("Values shown are from NEW, with (delta = NEW - REF) in parentheses.")
     print("")
 
-    all_problems = list(dict.fromkeys(
-        list(ref["problems"].keys()) + list(new["problems"].keys())
-    ))
+    all_problems = list(
+        dict.fromkeys(list(ref["problems"].keys()) + list(new["problems"].keys()))
+    )
 
     # Accumulate change summary across all problems
     summary_better = {"slight": 0, "moderate": 0, "large": 0}
@@ -288,9 +287,11 @@ def print_comparison(ref_path, new_path, per_dataset=False):
         ref_prob = ref["problems"].get(problem, {"datasets": {}, "average": {}})
         new_prob = new["problems"].get(problem, {"datasets": {}, "average": {}})
 
-        all_datasets = list(dict.fromkeys(
-            list(ref_prob["datasets"].keys()) + list(new_prob["datasets"].keys())
-        ))
+        all_datasets = list(
+            dict.fromkeys(
+                list(ref_prob["datasets"].keys()) + list(new_prob["datasets"].keys())
+            )
+        )
 
         # Per-dataset comparison (only if requested)
         if per_dataset:
@@ -305,7 +306,8 @@ def print_comparison(ref_path, new_path, per_dataset=False):
 
         # Average comparison (only shared datasets)
         shared_datasets = [
-            d for d in all_datasets
+            d
+            for d in all_datasets
             if d in ref_prob["datasets"] and d in new_prob["datasets"]
         ]
         if shared_datasets:
@@ -314,9 +316,13 @@ def print_comparison(ref_path, new_path, per_dataset=False):
             ref_avg = _compute_average_from_datasets(ref_shared)
             new_avg = _compute_average_from_datasets(new_shared)
             if ref_avg or new_avg:
-                print(f"=== {problem} (average over {len(shared_datasets)} shared datasets) ===")
+                print(
+                    f"=== {problem} (average over {len(shared_datasets)} shared datasets) ==="
+                )
                 _print_comparison_block(ref_avg, new_avg)
-                _accumulate_changes(ref_avg, new_avg, summary_better, summary_worse, summary_same)
+                _accumulate_changes(
+                    ref_avg, new_avg, summary_better, summary_worse, summary_same
+                )
                 print("")
 
     # Print global change summary
@@ -431,15 +437,13 @@ def _accumulate_changes(ref_metrics, new_metrics, better, worse, same_count):
     better/worse are dicts with keys 'slight', 'moderate', 'large'.
     same_count is a list with a single int element (mutable counter).
     """
-    all_methods = list(dict.fromkeys(
-        list(ref_metrics.keys()) + list(new_metrics.keys())
-    ))
+    all_methods = list(
+        dict.fromkeys(list(ref_metrics.keys()) + list(new_metrics.keys()))
+    )
     for method in all_methods:
         ref_m = ref_metrics.get(method, {})
         new_m = new_metrics.get(method, {})
-        all_metric_names = list(dict.fromkeys(
-            list(ref_m.keys()) + list(new_m.keys())
-        ))
+        all_metric_names = list(dict.fromkeys(list(ref_m.keys()) + list(new_m.keys())))
         for mn in all_metric_names:
             direction, magnitude = _classify_change(mn, ref_m.get(mn), new_m.get(mn))
             if direction == "better":
@@ -494,9 +498,9 @@ def _colorize(text, direction):
 
 def _print_comparison_block(ref_metrics, new_metrics):
     """Print a comparison table for two method->metric dicts."""
-    all_methods = list(dict.fromkeys(
-        list(ref_metrics.keys()) + list(new_metrics.keys())
-    ))
+    all_methods = list(
+        dict.fromkeys(list(ref_metrics.keys()) + list(new_metrics.keys()))
+    )
     if not all_methods:
         print("  (no data)")
         return
@@ -504,7 +508,9 @@ def _print_comparison_block(ref_metrics, new_metrics):
     # Collect all metric names (preserving order from ref first, then new)
     all_metric_names = []
     for m in all_methods:
-        for mn in list(ref_metrics.get(m, {}).keys()) + list(new_metrics.get(m, {}).keys()):
+        for mn in list(ref_metrics.get(m, {}).keys()) + list(
+            new_metrics.get(m, {}).keys()
+        ):
             if mn not in all_metric_names:
                 all_metric_names.append(mn)
 
@@ -565,13 +571,16 @@ def download_file_with_progress(url, filename):
 
     total_size = int(response.headers.get("content-length", 0))
 
-    with open(filename, "wb") as file, tqdm(
-        desc=f"Downloading {filename}",
-        total=total_size,
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as progress_bar:
+    with (
+        open(filename, "wb") as file,
+        tqdm(
+            desc=f"Downloading {filename}",
+            total=total_size,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as progress_bar,
+    ):
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
                 file.write(chunk)
