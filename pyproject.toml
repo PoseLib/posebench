@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "h5py>=3.11.0",
-    "poselib @ git+https://github.com/PoseLib/PoseLib.git@01d0a8d606fecd740731b28fd964d741a06df583",
+    "poselib @ git+https://github.com/PoseLib/PoseLib.git@f0d2695",
     "requests>=2.32.4",
     "tqdm>=4.67.1",
 ]
