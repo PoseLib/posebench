@@ -191,6 +191,55 @@ def fundamental_poselib(instance):
     err_R, err_t = fundamental_error(F, instance)
     return {"rot": err_R, "t": err_t, "rt": runtime}
 
+def fundamental_decomp_poselib(instance):
+    opt = instance["opt"].copy()
+    pp1 = camera_dict_to_calib_matrix(instance["cam1"])[:2, 2]
+    pp2 = camera_dict_to_calib_matrix(instance["cam2"])[:2, 2]
+    tt1 = datetime.datetime.now()
+    F, info = poselib.estimate_fundamental(instance["x1"], instance["x2"], opt)
+    camera1, camera2 = poselib.focals_from_fundamental(F, pp1, pp2)
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+
+    if (np.isnan(camera1.focal()) or np.isnan(camera2.focal())):
+        return {"rot": 180, "t": 180, "rt": runtime}
+
+    E = camera2.calib_matrix().T @ F @ camera1.calib_matrix()
+    x1u = camera1.unproject(instance["x1"][info['inliers']])
+    x2u = camera2.unproject(instance["x2"][info['inliers']])
+
+    poses = poselib.motion_from_essential(E, x1u, x2u)
+
+    best_err_R = 180.0
+    best_err_t = 180.0
+
+    for pose in poses:
+        R = pose.R
+        t = pose.t
+        err_R = rotation_angle(instance["R"] @ R.T)
+        err_t = angle(instance["t"], t)
+
+        if err_R + err_t < best_err_R + best_err_t:
+            best_err_R = err_R
+            best_err_t = err_t
+
+    return {"rot": best_err_R, "t": best_err_t, "rt": runtime}
+
+def varying_focal_relpose_poselib(instance):
+    opt = instance["opt"].copy()
+    pp1 = camera_dict_to_calib_matrix(instance["cam1"])[:2, 2]
+    pp2 = camera_dict_to_calib_matrix(instance["cam2"])[:2, 2]
+    tt1 = datetime.datetime.now()
+    image_pair, info = poselib.estimate_varying_focal_relative_pose(instance["x1"], instance["x2"], pp1, pp2, opt)
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+
+    pose = image_pair.pose
+    (R, t) = (pose.R, pose.t)
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+    return {"rot": err_R, "t": err_t, "rt": runtime}
+
 
 def fundamental_pycolmap(instance):
     opt = poselib_opt_to_pycolmap_opt(instance["opt"])
