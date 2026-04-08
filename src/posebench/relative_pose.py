@@ -10,8 +10,13 @@ from posebench.utils.misc import (
     h5_to_camera_dict,
     substr_in_list,
 )
-from posebench.estimators import essential_poselib, fundamental_poselib, varying_focal_relpose_poselib, \
-    fundamental_decomp_poselib
+from posebench.estimators import (
+    essential_poselib,
+    fundamental_poselib,
+    varying_focal_relpose_poselib,
+    fundamental_decomp_poselib,
+    fundamental_decomp_iterative_poselib,
+)
 from posebench.utils.misc import has_pycolmap
 
 if has_pycolmap():
@@ -77,7 +82,10 @@ def main(
         "E (poselib,TS)": lambda i: essential_poselib(i, tangent_sampson=True),
         "F (poselib)": lambda i: fundamental_poselib(i),
         "F (poselib,decomp)": lambda i: fundamental_decomp_poselib(i),
-        "F (poselib,vf)": lambda i: varying_focal_relpose_poselib(i),
+        "F (poselib,decomp iterative)": lambda i: fundamental_decomp_iterative_poselib(
+            i
+        ),
+        "F (poselib,decomp in RANSAC)": lambda i: varying_focal_relpose_poselib(i),
     }
     if has_pycolmap():
         evaluators["E (COLMAP)"] = lambda i: essential_pycolmap(i)
