@@ -192,6 +192,158 @@ def fundamental_poselib(instance):
     return {"rot": err_R, "t": err_t, "rt": runtime}
 
 
+def fundamental_decomp_poselib(instance):
+    opt = instance["opt"].copy()
+    if (
+        instance["cam1"]["width"] > 0
+        and instance["cam2"]["width"] > 0
+        and instance["cam1"]["height"] > 0
+        and instance["cam2"]["height"] > 0
+    ):
+        pp1 = np.array([instance["cam1"]["width"] / 2, instance["cam1"]["height"] / 2])
+        pp2 = np.array([instance["cam2"]["width"] / 2, instance["cam2"]["height"] / 2])
+    else:
+        pp1 = camera_dict_to_calib_matrix(instance["cam1"])[:2, 2]
+        pp2 = camera_dict_to_calib_matrix(instance["cam2"])[:2, 2]
+    tt1 = datetime.datetime.now()
+    F, info = poselib.estimate_fundamental(instance["x1"], instance["x2"], opt)
+    camera1, camera2 = poselib.focals_from_fundamental(F, pp1, pp2)
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+
+    if np.isnan(camera1.focal()) or np.isnan(camera2.focal()):
+        return {"rot": 180, "t": 180, "rt": runtime}
+
+    E = camera2.calib_matrix().T @ F @ camera1.calib_matrix()
+    x1u = camera1.unproject(instance["x1"][info["inliers"]])
+    x2u = camera2.unproject(instance["x2"][info["inliers"]])
+
+    poses = poselib.motion_from_essential(E, x1u, x2u)
+
+    best_err_R = 180.0
+    best_err_t = 180.0
+
+    for pose in poses:
+        R = pose.R
+        t = pose.t
+        err_R = rotation_angle(instance["R"] @ R.T)
+        err_t = angle(instance["t"], t)
+
+        if err_R + err_t < best_err_R + best_err_t:
+            best_err_R = err_R
+            best_err_t = err_t
+
+    return {"rot": best_err_R, "t": best_err_t, "rt": runtime}
+
+
+def fundamental_decomp_iterative_poselib(instance):
+    opt = instance["opt"].copy()
+
+    if (
+        instance["cam1"]["width"] > 0
+        and instance["cam2"]["width"] > 0
+        and instance["cam1"]["height"] > 0
+        and instance["cam2"]["height"] > 0
+    ):
+        cam1_focal_prior = 1.2 * max(
+            instance["cam1"]["width"], instance["cam1"]["height"]
+        )
+        cam2_focal_prior = 1.2 * max(
+            instance["cam2"]["width"], instance["cam2"]["height"]
+        )
+        cam1 = {
+            "model": "SIMPLE_PINHOLE",
+            "params": [
+                cam1_focal_prior,
+                instance["cam1"]["width"] / 2,
+                instance["cam1"]["height"] / 2,
+            ],
+            "width": instance["cam1"]["width"],
+            "height": instance["cam1"]["height"],
+        }
+        cam2 = {
+            "model": "SIMPLE_PINHOLE",
+            "params": [
+                cam2_focal_prior,
+                instance["cam2"]["width"] / 2,
+                instance["cam2"]["height"] / 2,
+            ],
+            "width": instance["cam2"]["width"],
+            "height": instance["cam2"]["height"],
+        }
+    else:
+        pp1 = camera_dict_to_calib_matrix(instance["cam1"])[:2, 2]
+        pp2 = camera_dict_to_calib_matrix(instance["cam2"])[:2, 2]
+        cam1 = {
+            "model": "SIMPLE_PINHOLE",
+            "params": [2.4 * np.max(pp1), pp1[0], pp1[1]],
+            "width": -1,
+            "height": -1,
+        }
+        cam2 = {
+            "model": "SIMPLE_PINHOLE",
+            "params": [2.4 * np.max(pp2), pp2[0], pp2[1]],
+            "width": -1,
+            "height": -1,
+        }
+    tt1 = datetime.datetime.now()
+    F, info = poselib.estimate_fundamental(instance["x1"], instance["x2"], opt)
+    camera1, camera2, iters = poselib.focals_from_fundamental_iterative(F, cam1, cam2)
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+
+    if np.isnan(camera1.focal()) or np.isnan(camera2.focal()):
+        return {"rot": 180, "t": 180, "rt": runtime}
+
+    E = camera2.calib_matrix().T @ F @ camera1.calib_matrix()
+    x1u = camera1.unproject(instance["x1"][info["inliers"]])
+    x2u = camera2.unproject(instance["x2"][info["inliers"]])
+
+    poses = poselib.motion_from_essential(E, x1u, x2u)
+
+    best_err_R = 180.0
+    best_err_t = 180.0
+
+    for pose in poses:
+        R = pose.R
+        t = pose.t
+        err_R = rotation_angle(instance["R"] @ R.T)
+        err_t = angle(instance["t"], t)
+
+        if err_R + err_t < best_err_R + best_err_t:
+            best_err_R = err_R
+            best_err_t = err_t
+
+    return {"rot": best_err_R, "t": best_err_t, "rt": runtime}
+
+
+def varying_focal_relpose_poselib(instance):
+    opt = instance["opt"].copy()
+    if (
+        instance["cam1"]["width"] > 0
+        and instance["cam2"]["width"] > 0
+        and instance["cam1"]["height"] > 0
+        and instance["cam2"]["height"] > 0
+    ):
+        pp1 = np.array([instance["cam1"]["width"] / 2, instance["cam1"]["height"] / 2])
+        pp2 = np.array([instance["cam2"]["width"] / 2, instance["cam2"]["height"] / 2])
+    else:
+        pp1 = camera_dict_to_calib_matrix(instance["cam1"])[:2, 2]
+        pp2 = camera_dict_to_calib_matrix(instance["cam2"])[:2, 2]
+    tt1 = datetime.datetime.now()
+    image_pair, info = poselib.estimate_varying_focal_relative_pose(
+        instance["x1"], instance["x2"], pp1, pp2, opt
+    )
+    tt2 = datetime.datetime.now()
+    runtime = (tt2 - tt1).total_seconds()
+
+    pose = image_pair.pose
+    (R, t) = (pose.R, pose.t)
+    err_R = rotation_angle(instance["R"] @ R.T)
+    err_t = angle(instance["t"], t)
+    return {"rot": err_R, "t": err_t, "rt": runtime}
+
+
 def fundamental_pycolmap(instance):
     opt = poselib_opt_to_pycolmap_opt(instance["opt"])
     tt1 = datetime.datetime.now()
